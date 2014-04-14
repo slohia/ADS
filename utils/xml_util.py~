@@ -1,0 +1,15 @@
+import xml.etree.ElementTree as xml
+from multidict import MultiDict
+tree = xml.parse('sample.xml')
+root = tree.getroot()
+print root.tag
+print root.attrib
+
+param_dict = MultiDict()
+
+for child in root:
+	for subchild in child: 
+		param_dict[child.tag][subchild.tag] = subchild.text
+
+print param_dict
+

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<parameters>
+	<cpu>
+		<processes>10</processes>
+		<system>34</system>
+		<user>23</user>
+	</cpu>
+	<memory>
+		<faults>50</faults>
+		<utilization>100</utilization>
+	</memory>
+	<disk>
+		<read>20</read>
+		<write>90</write>
+		<service>344</service>
+		<files>300</files>
+	</disk>
+</parameters>
