@@ -9,6 +9,7 @@
 
 from lib.db import DB
 from utils.logger import ADSLog
+import socket
 import SimpleXMLRPCServer
 import datetime
 import random
@@ -44,16 +45,19 @@ class ClientFunctions:
         random_number = long(random.random()*100000000000000000L)
         raw_data_for_id = str(current_time)+' '+str(random_number)+' '+str(client_ip_address)+' '+str(client_hostname)
         client_dict['vm_id'] = hashlib.sha256(raw_data_for_id).hexdigest()
+        client_dict['primary_server'] = '0.0.0.0'
         self.log.log_msg("Assigning UID: %s " % client_dict['vm_id'])
         self.store_new_client_info(client_dict)
         return str(client_dict['vm_id'])
 
     def get_server_repository(self, client_id):
+        self.log.log_msg("Request to create server repository...")
         xml_repository = self.config.xml['ads_xml_repository']
         self.available_client_repo += 1
-        new_repo_for_client = xml_repository+'/' + 'client_repo_' + self.available_client_repo
+        new_repo_for_client = xml_repository + '/client_repo_' + str(self.available_client_repo)
         if not os.path.exists(new_repo_for_client):
             os.makedirs(new_repo_for_client)
+        self.log.log_msg("Created server repository SUCCESSFULLY! " + new_repo_for_client)
         return new_repo_for_client
 
 
@@ -65,8 +69,8 @@ class RPC:
         self.config = ads.config
 
     def run_rpc_service(self):
-        self.log.log_msg("Starting RPC service @ 127.0.0.1:8006")
-        server = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", 8006))
+        self.log.log_msg("Starting RPC service @ 10.0.0.61:8006")
+        server = SimpleXMLRPCServer.SimpleXMLRPCServer(("10.0.0.61", 8006))
         server.register_instance(ClientFunctions(self))
         server.serve_forever()
 

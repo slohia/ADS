@@ -33,30 +33,34 @@ class ADS:
 
     def store_data_in_db(self):
         while True:
+            time.sleep(5)
             current_file_name_list = []
             current_param_dict = MultiDict()
             current_file_name_list.extend(glob.glob(self.glob_lookup_arg))
             for current_file_name in current_file_name_list:
+                print current_file_name_list
                 current_param_dict = self.xml.read_xml(current_file_name)
+                #print current_param_dict
                 if self.db.update_client_info(self.session, current_param_dict['client']):
                     self.log.log_msg("True from update")
                 for each_parameter_type in self.parameter_types:
+                    print each_parameter_type
                     self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
-                self.db.insert_db(self.session, 'clients', current_param_dict['client'])
+                #self.db.insert_db(self.session, 'clients', current_param_dict['client'])
                 self.db.commit_transaction(self.session)
                 os.remove(current_file_name)
 
     def run(self):
         try:
-            #storage_process = Process(target=self.store_data_in_db)
-            #anomaly_detection_process = Process(target=self.run_anomaly_detection)
+            storage_process = Process(target=self.store_data_in_db)
+            anomaly_detection_process = Process(target=self.run_anomaly_detection)
             rpc_process = Process(target=self.run_rpc)
             rpc_process.start()
+            storage_process.start()
+            anomaly_detection_process.start()
             rpc_process.join()
-            #storage_process.start()
-            #storage_process.join()
-            #anomaly_detection_process.start()
-            #anomaly_detection_process.join()
+            storage_process.join()
+            anomaly_detection_process.join()
         except Exception, e:
             self.log.log_msg("Exception in run(): %s" % str(e))
 
@@ -76,7 +80,7 @@ class ADS:
                     for each_parameter_type in self.parameter_types:
                         algorithm_input_list = self.get_data_for_algorithm(vm_id[0], each_parameter_type)
                         print algorithm_input_list
-                time.sleep(5*60)
+                time.sleep(5)
         except Exception, e:
             self.log.log_msg("Exception in run_anomaly_detection(): %s" % str(e))
 

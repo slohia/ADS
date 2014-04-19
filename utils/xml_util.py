@@ -22,12 +22,16 @@ class XMLOperations:
             self.log.log_msg("Reading from the xml: %s" % str(xml_file))
             param_dict = MultiDict()
             tree = xmlTree.parse(str(xml_file))
+            print tree.find('parameters')
             root = tree.getroot()
+            # print root
             param_dict['client']['vm_ip'] = root.attrib['ip']
             param_dict['client']['vm_name'] = root.attrib['name']
             param_dict['client']['vm_id'] = root.attrib['id']
             for child in root:
+                print child
                 for sub_child in child:
+                    print sub_child
                     param_dict[child.tag][sub_child.tag] = sub_child.text
             self.log.log_msg("Successfully Read from the xml: %s" % str(xml_file))
             return param_dict

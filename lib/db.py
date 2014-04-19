@@ -83,23 +83,22 @@ class Disk(Base):
     __tablename__ = 'disk'
     id = Column(Integer, primary_key=True)
     vm_id = Column(String(100))
-    read_bytes_rate = Column(Integer)
+    cache_read_bytes_rate = Column(Integer)
+    buffer_read_bytes_rate = Column(Integer)
     write_bytes_rate = Column(Integer)
-    service_time = Column(Integer)
     total_files = Column(Integer)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, vm_id, cache_read_bytes_rate, buffer_read_bytes_rate, write_bytes_rate, service_time, total_files, timestamp):
+    def __init__(self, vm_id, cache_read_bytes_rate, buffer_read_bytes_rate, write_bytes_rate, total_files, timestamp):
         self.vm_id = vm_id
         self.cache_read_bytes_rate = cache_read_bytes_rate
         self.buffer_read_bytes_rate = buffer_read_bytes_rate
         self.write_bytes_rate = write_bytes_rate
-        self.service_time = service_time
         self.total_files = total_files
         self.timestamp = timestamp
 
     def __repr__(self):
-        return "<Disk(%s, %s, %s, %s, %s, %s, %s)>" % (self.vm_id, str(self.cache_read_bytes_rate), str(self.buffer_read_bytes_rate), str(self.write_bytes_rate), str(self.service_time), str(self.total_files), str(self.timestamp))
+        return "<Disk(%s, %s, %s, %s, %s, %s)>" % (self.vm_id, str(self.cache_read_bytes_rate), str(self.buffer_read_bytes_rate), str(self.write_bytes_rate), str(self.total_files), str(self.timestamp))
 
 
 class Clients(Base):
@@ -170,33 +169,36 @@ class DB:
 
     def insert_db(self, session, table_name, client_dict, param_dict=[]):
         self.log.log_msg("Request to insert in the database.")
-        #print param_dict
+        new_record = None
         print client_dict
-        #print len(param_dict)
         try:
             if len(param_dict) == 4:
                 self.log.log_msg("The number of targeted columns is 6")
                 if table_name == 'network':
                     self.log.log_msg("The insert request is for the database table 'network'")
                     new_record = Network(vm_id=client_dict['vm_id'], latency=param_dict['latency'], throughput=param_dict['throughput'], packet_loss=param_dict['packet_loss'], open_ports=param_dict['open_ports'], timestamp=datetime.datetime.utcnow())
+            if len(param_dict) == 5:
+                if table_name == 'disk':
+                    self.log.log_msg("The insert request is for the database table 'disk'")
+                    new_record = Disk(vm_id=client_dict['vm_id'], cache_read_bytes_rate=param_dict['cache_read_bytes_rate'], buffer_read_bytes_rate=param_dict['buffer_read_bytes_rate'], write_bytes_rate=param_dict['write_bytes_rate'], total_files=param_dict['total_files'], timestamp=datetime.datetime.utcnow())
+            if len(param_dict) == 3:
                 if table_name == 'cpu':
                     self.log.log_msg("The insert request is for the database table 'cpu'")
                     new_record = CPU(vm_id=client_dict['vm_id'], processes=param_dict['processes'], system_time=param_dict['system_time'], user_time=param_dict['user_time'], timestamp=datetime.datetime.utcnow())
-                if table_name == 'disk':
-                    self.log.log_msg("The insert request is for the database table 'disk'")
-                    new_record = Disk(vm_id=client_dict['vm_id'], cache_read_bytes_rate=param_dict['cache_read_bytes_rate'], buffer_read_bytes_rate=param_dict['buffer_read_bytes_rate'], write_bytes_rate=param_dict['write_bytes_rate'], service_time=param_dict['service_time'], total_files=param_dict['total_files'], timestamp=datetime.datetime.utcnow())
-            elif len(param_dict) == 2:
+            if len(param_dict) == 2:
                 if table_name == 'memory':
                     self.log.log_msg("The insert request is for the database table 'memory'")
                     new_record = Memory(vm_id=client_dict['vm_id'], utilization=param_dict['utilization'], page_faults=param_dict['page_faults'], timestamp=datetime.datetime.utcnow())
-            elif table_name == 'clients':
+            if table_name == 'clients':
                     self.log.log_msg("The insert request is for the database table 'clients'")
                     new_record = Clients(vm_name=client_dict['vm_name'], vm_id=client_dict['vm_id'], vm_ip=client_dict['vm_ip'], initial_vm_ip=client_dict['vm_ip'], initial_vm_name=client_dict['vm_name'], primary_server=client_dict['primary_server'], timestamp=datetime.datetime.utcnow())
-            else:
+            if new_record is None:
+                print param_dict, len(param_dict)
                 self.log.log_msg("Wrong Arguments passed.")
                 return
-            session.add(new_record)
-            self.log.log_msg("New record has been added.")
+            else:
+                session.add(new_record)
+                self.log.log_msg("New record has been added.")
 
         except Exception, e:
             self.log.log_msg("Exception in insert_db(): %s" % str(e))

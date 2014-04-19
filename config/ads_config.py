@@ -16,19 +16,19 @@ class ADSConfig:
         }
 
         self.env = {
-            "ads_log_path"              : "/tmp/ads/log",
+            "ads_log_path"              : "/home/slohia/ads/log",
             "ads_log_file"              : "ads.log"
         }
 
         self.usr_env = {
             "LOG_LEVEL"                 : "debug", #info or debug
-            #"parameter_types"          : ['cpu', 'memory', 'disk', 'network']
-            "parameter_types"           : ['cpu'],
+            "parameter_types"           : ['cpu', 'memory', 'disk'],
+            #"parameter_types"           : ['cpu', 'memory', 'disk', 'network'],
             "anomaly_detection_period"  : 5 #in minutes
         }
 
         self.xml = {
-            "ads_xml_repository"        : "/tmp/ads/xml"
+            "ads_xml_repository"        : "/home/slohia/ads/xml"
         }
 
         self.pattern = {
