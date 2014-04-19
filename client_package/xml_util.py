@@ -59,7 +59,7 @@ class XMLOperations:
             complete_tree = ET.ElementTree(tree_root)
             print complete_tree
             file_handle = open(path_to_xml, "w")
-            complete_tree.write(file_handle, encoding='utf-8', xml_declaration=True, method="xml")
+            complete_tree.write(file_handle)#, encoding='utf-8', xml_declaration=True, method="xml")
             file_handle.close()
             self.log.log_msg("XML Generation Completed Successfully")
             return path_to_xml

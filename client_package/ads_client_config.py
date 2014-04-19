@@ -17,13 +17,13 @@ class ADSClientConfig:
         }
 
         self.env = {
-            "ads_log_path"              : "/tmp/ads/log",
+            "ads_log_path"              : "/home/slohia/ads/log",
             "ads_log_file"              : "ads.log",
-            "primary_server_ip"         : "127.0.0.1",
+            "primary_server_ip"         : "10.0.0.61",
             "secondary_server_ip"       : "0.0.0.0",
-            "server_port"               : "8001",
-            "server_username"           : "manish",
-            "server_password"           : "passw0rd!"
+            "server_port"               : "8006",
+            "server_username"           : "slohia",
+            "server_password"           : "1"
         }
 
         self.usr_env = {
@@ -33,7 +33,7 @@ class ADSClientConfig:
         }
 
         self.xml = {
-            "ads_xml_repository"        : "/tmp/ads/xml"
+            "ads_xml_repository"        : "/home/slohia/ads/xml"
         }
 
         self.pattern = {

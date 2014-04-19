@@ -73,7 +73,8 @@ class SSH:
         try:
             self.log.log_msg("transfer_file_client_to_ads_server Request")
             sftp = ssh_client.open_sftp()
-            self.log.log_msg("Transferring file from '"+str(local_path)+"' to '"+str(remote_path)+"'")
+            remote_path = remote_path + "/" + local_path.split('/')[-1]
+            self.log.log_msg("Transferring file from '"+str(local_path)+"' to '"+str(remote_path) + "'")
             sftp.put(local_path, remote_path)
             self.log.log_msg("File Transferred Successfully")
             sftp.close()
