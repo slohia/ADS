@@ -1,0 +1,8 @@
+######################################################################################
+## Copyright (C) Georgia Institute of Technology. All Rights Reserved.
+## Name         : sql.py
+## Description  : module to provide interfaces for database operations
+## Author       : Manish Choudhary
+## Start Date   : 15 MAR 2014
+## Last Revised :
+######################################################################################
