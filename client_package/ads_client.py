@@ -40,10 +40,11 @@ class ADSClient:
             system_dict['cpu']['system_time'] = self.sys_mon.system_time()
             self.log.log_msg("fetching user_time")
             system_dict['cpu']['user_time'] = self.sys_mon.user_time()
-            #self.log.log_msg("Fetching Utilization")
-            #system_dict['memory']['utilization'] = self.sys_mon.memory_utilization()
             self.log.log_msg("Fetching Page Faults")
             system_dict['memory']['page_faults'] = self.sys_mon.page_faults()
+            self.log.log_msg("Fetching Utilization")
+            #system_dict['memory']['utilization'] = self.sys_mon.memory_utilization()
+            system_dict['memory']['utilization'] = 50
             self.log.log_msg("Fetching write_byte_rate")
             system_dict['disk']['write_bytes_rate'] = self.sys_mon.write_bytes()
             self.log.log_msg("Fetching read_byte_rate")
@@ -53,7 +54,8 @@ class ADSClient:
             self.log.log_msg("Fetching disk utilization")
             system_dict['disk']['utilization'] = self.sys_mon.used_disk_percent()
             self.log.log_msg("Fetching total files")
-            system_dict['disk']['total_files'] = self.sys_mon.total_files()
+            # system_dict['disk']['total_files'] = self.sys_mon.total_files()
+            system_dict['disk']['total_files'] = 100
             self.log.log_msg("Fetching vm_name")
             system_dict['client']['vm_name'] = socket.gethostname()
             self.log.log_msg("Fetching vm_ip")
@@ -78,18 +80,18 @@ class ADSClient:
 
     def client_controller(self):
         try:
-            self.assigned_uid = self.rpc.get_existing_uid_from_server()
-            #self.assigned_uid = "1"
+            self.assigned_uid = self.rpc.get_uid_from_server()
+            # self.assigned_uid = "1"
             self.remote_path_on_server = self.rpc.get_server_repository(self.assigned_uid)
             print "assigned Id:" + self.assigned_uid
-            print "remote path" + self.remote_path_on_server
-            #self.remote_path_on_server = "/tmp/"
+            print "remote path", self.remote_path_on_server
+            # self.remote_path_on_server = "/tmp/"
             while True:
                 system_dict = self.extract_system_performance_data()
                 print system_dict
                 path_to_xml = self.xml.write_xml(system_dict)
                 print path_to_xml
-                #self.transfer_to_server(self.remote_path_on_server, path_to_xml)
+                self.transfer_to_server(self.remote_path_on_server, path_to_xml)
                 time.sleep(self.config.usr_env['monitoring_period'])
         except Exception, e:
             self.log.log_msg("Exception in client_controller :%s" % str(e))
