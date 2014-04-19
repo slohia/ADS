@@ -7,10 +7,11 @@
 ## Last Revised :
 ######################################################################################
 
-import xml.etree.ElementTree as xmlTree
+import xml.etree.ElementTree as ET
 from multidict import MultiDict
 import time
 import calendar
+
 
 class XMLOperations:
 
@@ -41,14 +42,26 @@ class XMLOperations:
             print xml_file_name
             path_to_xml = self.config.xml['ads_xml_repository'] + '/' + xml_file_name
             self.log.log_msg("Generating XML")
-            root = xmlTree.Element("parameters")
+            print path_to_xml
+            tree_root = ET.Element("parameters")
+            tree_root.set('ip', param_dict['client']['vm_ip'])
+            tree_root.set('id', param_dict['client']['vm_id'])
+            tree_root.set('name', param_dict['client']['vm_name'])
+            del param_dict['client']
             for key, value in param_dict.items():
-                child = xmlTree.SubElement(root, str(key))
+                child = ET.SubElement(tree_root, str(key))
+                print child
                 for sub_key, sub_value in value.items():
-                    sub_child = xmlTree.SubElement(child, str(sub_key))
+                    print sub_key
+                    print sub_value
+                    sub_child = ET.SubElement(child, str(sub_key))
                     sub_child.text = str(sub_value)
-            tree = xmlTree(root)
-            tree.write(path_to_xml)
+            complete_tree = ET.ElementTree(tree_root)
+            print complete_tree
+            file_handle = open(path_to_xml, "w")
+            complete_tree.write(file_handle, encoding='utf-8', xml_declaration=True, method="xml")
+            file_handle.close()
             self.log.log_msg("XML Generation Completed Successfully")
+            return path_to_xml
         except Exception, e:
             self.log.log_msg("Exception in generating the xml: %s" % str(e))
