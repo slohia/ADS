@@ -15,6 +15,8 @@ from lib.rpc_server import RPC
 from lib.db import DB
 import glob
 import os
+import time
+from multiprocessing import Process
 
 
 class ADS:
@@ -25,41 +27,58 @@ class ADS:
         self.db = DB(self)
         self.rpc = RPC(self)
         self.xml_repository = self.config.xml['ads_xml_repository']
-        self.glob_lookup_arg = self.xml_repository + "/*.xml"
+        self.glob_lookup_arg = self.xml_repository + "/*/*.xml"
         self.parameter_types = self.config.usr_env['parameter_types']
         self.session = self.db.connect_and_generate_db()
 
     def store_data_in_db(self):
-        current_file_name_list = []
-        current_param_dict = MultiDict()
-        current_file_name_list.extend(glob.glob(self.glob_lookup_arg))
-        for current_file_name in current_file_name_list:
-            current_param_dict = self.xml.read_xml(current_file_name)
-            #if self.db.update_client_info(self.session, current_param_dict['client']):
-                #self.log.log_msg("True from update")
-            for each_parameter_type in self.parameter_types:
-                self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
-            self.db.commit_transaction(self.session)
-                #self.db.insert_db(self.session, 'clients', current_param_dict['client'])
-            #os.remove(current_file_name)
+        while True:
+            current_file_name_list = []
+            current_param_dict = MultiDict()
+            current_file_name_list.extend(glob.glob(self.glob_lookup_arg))
+            for current_file_name in current_file_name_list:
+                current_param_dict = self.xml.read_xml(current_file_name)
+                if self.db.update_client_info(self.session, current_param_dict['client']):
+                    self.log.log_msg("True from update")
+                for each_parameter_type in self.parameter_types:
+                    self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
+                self.db.insert_db(self.session, 'clients', current_param_dict['client'])
+                self.db.commit_transaction(self.session)
+                os.remove(current_file_name)
 
     def run(self):
-        #session = self.db.connect_and_generate_db()
-        while True:
-            self.store_data_in_db()
-            #self.run_anomaly_detection()
-            #self.rpc.run_rpc_service()
-            break
+        try:
+            #storage_process = Process(target=self.store_data_in_db)
+            #anomaly_detection_process = Process(target=self.run_anomaly_detection)
+            rpc_process = Process(target=self.run_rpc)
+            rpc_process.start()
+            rpc_process.join()
+            #storage_process.start()
+            #storage_process.join()
+            #anomaly_detection_process.start()
+            #anomaly_detection_process.join()
+        except Exception, e:
+            self.log.log_msg("Exception in run(): %s" % str(e))
+
+    def run_rpc(self):
+        try:
+            self.rpc.run_rpc_service()
+        except Exception, e:
+            self.log.log_msg("Exception in run_rpc(): %s" % str(e))
 
     def run_anomaly_detection(self):
-        self.log.log_msg("Running Anomaly Detection")
-        vm_id_list = self.db.fetch_vm_ids_from_db(self.session)
-        print vm_id_list
-        for vm_id in vm_id_list:
-            for each_parameter_type in self.parameter_types:
-                algorithm_input_list = self.get_data_for_algorithm(vm_id[0], each_parameter_type)
-                print algorithm_input_list
-
+        try:
+            while True:
+                self.log.log_msg("Running Anomaly Detection")
+                vm_id_list = self.db.fetch_vm_ids_from_db(self.session)
+                print vm_id_list
+                for vm_id in vm_id_list:
+                    for each_parameter_type in self.parameter_types:
+                        algorithm_input_list = self.get_data_for_algorithm(vm_id[0], each_parameter_type)
+                        print algorithm_input_list
+                time.sleep(5*60)
+        except Exception, e:
+            self.log.log_msg("Exception in run_anomaly_detection(): %s" % str(e))
 
     def get_data_for_algorithm(self, vm_id, table_name):
         try:
