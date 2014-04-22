@@ -16,7 +16,7 @@ import random
 import hashlib
 import os
 from utils.multidict import MultiDict
-
+from SOM.som import SOM
 
 class ClientFunctions:
 
@@ -58,6 +58,17 @@ class ClientFunctions:
         if not os.path.exists(new_repo_for_client):
             os.makedirs(new_repo_for_client)
         self.log.log_msg("Created server repository SUCCESSFULLY! " + new_repo_for_client)
+
+        self.log.log_msg("Creating learning process for client")
+        cpu_process = SOM(client_id, 'cpu', 32, 32, 3, 0.05, 100)
+        cpu_process.start()
+        memory_process = SOM(client_id, 'memory', 32, 32, 2, 0.05, 100)
+        memory_process.start()
+        network_process = SOM(client_id, 'network', 32, 32, 4, 0.05, 100)
+        network_process.start()
+        disk_process = SOM(client_id, 'disk', 32, 32, 5, 0.05, 100)
+        disk_process.start()
+
         return new_repo_for_client
 
 

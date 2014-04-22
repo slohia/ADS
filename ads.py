@@ -31,6 +31,7 @@ class ADS:
         self.parameter_types = self.config.usr_env['parameter_types']
         self.session = self.db.connect_and_generate_db()
 
+
     def store_data_in_db(self):
         while True:
             time.sleep(5)

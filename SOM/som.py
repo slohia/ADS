@@ -4,19 +4,27 @@ from math import *
 import sys
 import scipy
 from scipy.spatial.distance import cityblock
+from multiprocessing import Process
+import time
 
-class SOM:
-
-    def __init__(self, max_train_values, name="som", height=10, width=10, fv_size=10, learning_rate=0.005, seed=255):
+class SOM(Process):
+    # client_id, 'cpu', 32, 32, 3, 0.05, 100
+    def __init__(self, client_id, name, height=10, width=10, fv_size=10, learning_rate=0.005, seed=255):
+        Process.__init__(self)
+        self.client_id = client_id
         self.name = name
         self.height = height
         self.width = width
         self.fv_size = fv_size
         self.radius = (height + width)*2
         self.learning_rate = learning_rate
-        self.max_train_values = max_train_values
+        self.max_train_values = []
         self.threshold = 0
         self.nodes = scipy.array([[[random()*seed for i in range(fv_size)] for x in range(width)] for y in range(height)])
+
+    def run(self):
+        time.sleep(5)
+        print "hello"
 
     # train_vector: [ fv0, fv1, fv2, ...] -> [ [...], [...], [...], ...]
     # train vector may be a list, will be converted to a list of scipy arrays
@@ -157,58 +165,58 @@ class SOM:
         except Exception, e:
             print str(e)
 
-
-if __name__ == "__main__":
-    # print "Demo 1:"
-    # colors = [ [0, 0, 0], [0, 0, 255], [0, 255, 0], [0, 255, 255], [255, 0, 0], [255, 0, 255], [255, 255, 0], [255, 255, 255]]
-    # width = 32
-    # height = 32
-    # color_som = SOM("colors", width, height, 3, 0.5)
-    # print "Training colors..."
-    # color_som.train(colors, 100)
-    # color_som.save_image(101)
-    train_file = 'train.txt'
-    train_data = []
-    with open(train_file, 'r') as train:
-        for line in train:
-            sample = line.rstrip().split(',')
-            train_data.append(sample)
-    train_data = [map(int, x) for x in train_data]
-
-    test_data = []
-    for i in range(len(train_data)):
-        test_data.append(train_data[i][:])
-
-    max_train_values = [0] * len(train_data[0])
-    for i in range(len(train_data)):
-        for j in range(len(train_data[i])):
-                if train_data[i][j] > max_train_values[j]:
-                    max_train_values[j] = train_data[i][j]
-    print max_train_values
-
-    # data whitening
-    for i in range(len(train_data)):
-        for j in range(len(train_data[i])):
-            train_data[i][j] = int(train_data[i][j] * 100.0 / max_train_values[j])
-
-
-    width = 32
-    height = 32
-    obs_som = SOM(max_train_values, "cpu_som", width, height, 4, 0.05, 100)
-    print "Training on observed data"
-    obs_som.train(train_data, 50)
-
-    for i in range(len(test_data)):
-        obs_som.predict(test_data[i])
-
-    obs_som.predict([29522, 86902, 4302, 226230])
-    obs_som.predict([29582, 86902, 4302, 226230])
-    obs_som.predict([29522, 86982, 4302, 226230])
-    obs_som.predict([29522, 86902, 4382, 226230])
-    obs_som.predict([29522, 86902, 4302, 226830])
-    obs_som.predict([29522, 86902, 4302, 26830])
-    obs_som.predict([59522, 106902, 8302, 226830])
-    obs_som.predict([29522, 86902, 4302, 326230])
-    obs_som.predict([29522, 86902, 6302, 226230])
-    obs_som.predict([2, 6902, 2, 6830])
-    #obs_som.save_image(21)
+#
+# if __name__ == "__main__":
+#     # print "Demo 1:"
+#     # colors = [ [0, 0, 0], [0, 0, 255], [0, 255, 0], [0, 255, 255], [255, 0, 0], [255, 0, 255], [255, 255, 0], [255, 255, 255]]
+#     # width = 32
+#     # height = 32
+#     # color_som = SOM("colors", width, height, 3, 0.5)
+#     # print "Training colors..."
+#     # color_som.train(colors, 100)
+#     # color_som.save_image(101)
+#     train_file = 'train.txt'
+#     train_data = []
+#     with open(train_file, 'r') as train:
+#         for line in train:
+#             sample = line.rstrip().split(',')
+#             train_data.append(sample)
+#     train_data = [map(int, x) for x in train_data]
+#
+#     test_data = []
+#     for i in range(len(train_data)):
+#         test_data.append(train_data[i][:])
+#
+#     max_train_values = [0] * len(train_data[0])
+#     for i in range(len(train_data)):
+#         for j in range(len(train_data[i])):
+#                 if train_data[i][j] > max_train_values[j]:
+#                     max_train_values[j] = train_data[i][j]
+#     print max_train_values
+#
+#     # data whitening
+#     for i in range(len(train_data)):
+#         for j in range(len(train_data[i])):
+#             train_data[i][j] = int(train_data[i][j] * 100.0 / max_train_values[j])
+#
+#
+#     width = 32
+#     height = 32
+#     obs_som = SOM(max_train_values, "cpu_som", width, height, 4, 0.05, 100)
+#     print "Training on observed data"
+#     obs_som.train(train_data, 50)
+#
+#     for i in range(len(test_data)):
+#         obs_som.predict(test_data[i])
+#
+#     obs_som.predict([29522, 86902, 4302, 226230])
+#     obs_som.predict([29582, 86902, 4302, 226230])
+#     obs_som.predict([29522, 86982, 4302, 226230])
+#     obs_som.predict([29522, 86902, 4382, 226230])
+#     obs_som.predict([29522, 86902, 4302, 226830])
+#     obs_som.predict([29522, 86902, 4302, 26830])
+#     obs_som.predict([59522, 106902, 8302, 226830])
+#     obs_som.predict([29522, 86902, 4302, 326230])
+#     obs_som.predict([29522, 86902, 6302, 226230])
+#     obs_som.predict([2, 6902, 2, 6830])
+#     #obs_som.save_image(21)
