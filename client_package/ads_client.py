@@ -16,11 +16,12 @@ from xml_util import XMLOperations
 from ads_client_config import ADSClientConfig
 from system_monitor import SystemMonitor
 from multidict import MultiDict
-
+from machine_address import MachineAddress
 
 class ADSClient:
 
     def __init__(self):
+        self.machine_address = MachineAddress()
         self.config = ADSClientConfig()
         self.log = ADSLog(self)
         self.rpc = RPCClient(self)
@@ -46,7 +47,8 @@ class ADSClient:
             #system_dict['memory']['utilization'] = self.sys_mon.memory_utilization()
             system_dict['memory']['utilization'] = 50
             self.log.log_msg("Fetching write_byte_rate")
-            system_dict['disk']['write_bytes_rate'] = self.sys_mon.write_bytes()
+            # system_dict['disk']['write_bytes_rate'] = self.sys_mon.write_bytes()
+            system_dict['disk']['write_bytes_rate'] = 100
             self.log.log_msg("Fetching read_byte_rate")
             read_bytes_result = self.sys_mon.read_bytes()
             system_dict['disk']['cache_read_bytes_rate'] = read_bytes_result[0]
@@ -59,7 +61,8 @@ class ADSClient:
             self.log.log_msg("Fetching vm_name")
             system_dict['client']['vm_name'] = socket.gethostname()
             self.log.log_msg("Fetching vm_ip")
-            system_dict['client']['vm_ip'] = socket.gethostbyname(socket.gethostname())
+            system_dict['client']['vm_ip'] = self.machine_address.get_lan_ip()
+            print "VM ID IS: %s" % system_dict['client']['vm_ip']
             self.log.log_msg("Fetching vm_id")
             system_dict['client']['vm_id'] = self.assigned_uid
             return system_dict
