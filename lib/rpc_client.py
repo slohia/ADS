@@ -8,12 +8,13 @@
 ######################################################################################
 import xmlrpclib
 import socket
-
+from machine_address import MachineAddress
 
 class RPCClient:
 
     def __init__(self):
-        self.machine_ip = socket.gethostbyname(socket.gethostname())
+        self.machine_address = MachineAddress()
+        self.machine_ip = self.machine_address.get_lan_ip()
         #self.machine_ip = '192.168.1.1'
         self.machine_name = socket.gethostname()
         self.rpc_server = 'http://localhost:8006'
