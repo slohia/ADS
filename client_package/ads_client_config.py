@@ -29,7 +29,7 @@ class ADSClientConfig:
         self.usr_env = {
             "LOG_LEVEL"                 : "debug", #info/debug/client
             "server_timeout_period"     : 3, #number of missing acknowledgement
-            "monitoring_period"         : 30 #in seconds
+            "monitoring_period"         : 0 #in seconds
         }
 
         self.xml = {
