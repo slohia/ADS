@@ -20,6 +20,7 @@ from system_monitor import SystemMonitor
 from multidict import MultiDict
 from machine_address import MachineAddress
 
+
 class ADSClient:
 
     def __init__(self):
@@ -141,6 +142,7 @@ class ADSClient:
                 path_to_xml = self.xml.write_xml(system_dict)
                 print path_to_xml
                 self.transfer_to_server(self.remote_path_on_server, path_to_xml)
+                os.remove(path_to_xml)
                 time.sleep(self.monitoring_period)
         except Exception, e:
             self.log.log_msg("Exception in client_controller :%s" % str(e))

@@ -71,7 +71,9 @@ class SOM(Process):
             for j in range(self.fv_size):
                 train_vector[i][j] = int(train_vector[i][j] * 100.0 / self.max_train_values[j])
 
+        self.log.log_msg("Training Starting for %s %s ..." % (self.client_id, self.name))
         self.train(train_vector, 100)
+        self.log.log_msg("Training Completed for %s %s ..." % (self.client_id, self.name))
 
         while True:
             time.sleep(5*60)
