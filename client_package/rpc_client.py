@@ -8,14 +8,16 @@
 ######################################################################################
 import xmlrpclib
 import socket
+from machine_address import MachineAddress
 
 
 class RPCClient:
 
     def __init__(self, ads):
+        self.machine_address = MachineAddress()
         self.config = ads.config
         self.log = ads.log
-        self.machine_ip = socket.gethostbyname(socket.gethostname())
+        self.machine_ip = self.machine_address.get_lan_ip()
         self.machine_name = socket.gethostname()
         self.primary_server_ip = self.config.env["primary_server_ip"]
         self.secondary_server_ip = self.config.env["secondary_server_ip"]
@@ -36,7 +38,7 @@ class RPCClient:
             elif server == "secondary":
                 rpc_server = 'http://'+self.secondary_server_ip+':'+self.server_port
                 server = xmlrpclib.Server(rpc_server)
-                return server.get_repository()
+                return server.get_server_repository(client_id)
 
         except Exception, e:
             self.log.log_msg("Exception in get_server_repository :%s" % str(e))
