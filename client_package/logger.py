@@ -8,6 +8,7 @@
 ######################################################################################
 
 import time
+import os
 
 
 class ADSLog:
@@ -16,6 +17,8 @@ class ADSLog:
         self.ads_log_path = self.config.env["ads_log_path"]
         self.ads_log = self.ads_log_path + "/" + self.config.env["ads_log_file"]
         self.ads_log_level = self.config.usr_env["LOG_LEVEL"]
+        if not os.path.isdir(self.ads_log_path):
+            os.makedirs(self.ads_log_path)
 
     def debug_logger(self, msg):
         print msg
@@ -26,7 +29,7 @@ class ADSLog:
     def info_logger(self, msg):
         ads_log_fh = open(self.ads_log, 'a+')
         ads_log_fh.write(time.strftime("%Y-%m-%d %H:%M:%S") + " :: " + msg + "\n")		# Locale neutral date format!
-        ads_log_fh.close()
+        ads_log_fh.cose()
 
     def client_logger(self, msg):
         pass

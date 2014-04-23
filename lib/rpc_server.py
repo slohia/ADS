@@ -57,6 +57,10 @@ class ClientFunctions:
         new_repo_for_client = xml_repository + '/client_repo_' + str(self.available_client_repo)
         if not os.path.exists(new_repo_for_client):
             os.makedirs(new_repo_for_client)
+            ack_file = new_repo_for_client + '/ack'
+            ack_file_handle = open(ack_file)
+            ack_file_handle.write("New Client")
+            ack_file_handle.close()
         self.log.log_msg("Created server repository SUCCESSFULLY! " + new_repo_for_client)
         return new_repo_for_client
 

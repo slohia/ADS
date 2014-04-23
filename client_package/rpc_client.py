@@ -29,7 +29,7 @@ class RPCClient:
         except Exception, e:
             self.log.log_msg("Exception in get_uid_from_server :%s" % str(e))
 
-    def get_server_repository(self, client_id ,server="primary"):
+    def get_server_repository(self, client_id, server="primary"):
         try:
             if server == "primary":
                 return self.server.get_server_repository(client_id)

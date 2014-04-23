@@ -9,6 +9,7 @@
 
 from config.ads_config import ADSConfig
 import time
+import os
 
 
 class ADSLog:
@@ -17,6 +18,8 @@ class ADSLog:
         self.ads_log_path = self.config.env["ads_log_path"]
         self.ads_log = self.ads_log_path + "/" + self.config.env["ads_log_file"]
         self.ads_log_level = self.config.usr_env["LOG_LEVEL"]
+        if not os.path.isdir(self.ads_log_path):
+            os.makedirs(self.ads_log_path)
 
     def debug_logger(self, msg):
         print msg

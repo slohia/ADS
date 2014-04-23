@@ -95,3 +95,16 @@ class SSH:
         except Exception,e:
             self.log.log_msg("Exception while transferring the file" % str(e))
             return False
+
+    def get_ack_stat_from_server(self, ssh_client, remote_path):
+        try:
+            self.log.log_msg("get_ack_stat_from_server Request")
+            sftp = ssh_client.open_sftp()
+            self.log.log_msg("Getting stat from the remote server for: " + str(remote_path))
+            file_stat = sftp.stat(remote_path)
+            self.log.log_msg("Stat Received Successfully.")
+            sftp.close()
+            return file_stat
+        except Exception, e:
+            self.log.log_msg("Exception while getting stat of the file" % str(e))
+            return False
