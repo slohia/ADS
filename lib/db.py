@@ -244,13 +244,13 @@ class DB:
         try:
             self.log.log_msg("Request to fetch data from table %s for vm %s" % (table_name_arg, vm_id_arg))
             if table_name_arg == 'network':
-                fetched_result = session.query(Network).filter(Network.vm_id == vm_id_arg)
+                fetched_result = session.query(Network).filter(Network.vm_id == vm_id_arg).order_by(Network.timestamp)
             elif table_name_arg == 'cpu':
-                fetched_result = session.query(CPU).filter(CPU.vm_id == vm_id_arg)
+                fetched_result = session.query(CPU).filter(CPU.vm_id == vm_id_arg).order_by(CPU.timestamp)
             elif table_name_arg == 'memory':
-                fetched_result = session.query(Memory).filter(Memory.vm_id == vm_id_arg)
+                fetched_result = session.query(Memory).filter(Memory.vm_id == vm_id_arg).order_by(Memory.timestamp)
             elif table_name_arg == 'disk':
-                fetched_result = session.query(Disk).filter(Disk.vm_id == vm_id_arg)
+                fetched_result = session.query(Disk).filter(Disk.vm_id == vm_id_arg).order_by(Disk.timestamp)
             else:
                 self.log.log_msg("Wrong table name passed.")
                 return False
