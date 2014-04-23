@@ -51,11 +51,11 @@ class ADS:
                         self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
                     #self.db.insert_db(self.session, 'clients', current_param_dict['client'])
                     self.db.commit_transaction(self.session)
-                    ack_file_handle = open(os.path.dirname(current_file_name) + '/ack')
+
+                    ack_file_handle = open(os.path.dirname(current_file_name) + '/ack', 'w')
                     ack_file_handle.write(current_file_name.split('/')[-1])
                     ack_file_handle.close()
                     os.remove(current_file_name)
-                    return True
         except Exception, e:
             self.log.log_msg("Exception in store_data_in_db(): %s" % str(e))
             return False

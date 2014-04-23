@@ -37,7 +37,6 @@ class ClientFunctions:
         self.db.disconnect_db(session)
 
     def get_uid(self, client_hostname, client_ip_address):
-        print "IPADDRESS RECEIVED: %s" % str(client_ip_address)
         uid = self.check_existing_client(client_hostname, client_ip_address)
         if uid:
             self.log.log_msg("Client already exists in database. Returning uid: %s" % str(uid))
@@ -68,7 +67,7 @@ class ClientFunctions:
         if not os.path.exists(new_repo_for_client):
             os.makedirs(new_repo_for_client)
             ack_file = new_repo_for_client + '/ack'
-            ack_file_handle = open(ack_file)
+            ack_file_handle = open(ack_file, 'w')
             ack_file_handle.write("New Client")
             ack_file_handle.close()
         self.log.log_msg("Created server repository SUCCESSFULLY! " + new_repo_for_client)
