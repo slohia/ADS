@@ -29,27 +29,36 @@ class ADS:
         self.xml_repository = self.config.xml['ads_xml_repository']
         self.glob_lookup_arg = self.xml_repository + "/*/*.xml"
         self.parameter_types = self.config.usr_env['parameter_types']
+        if not os.path.isdir(self.xml_repository):
+            os.makedirs(self.xml_repository)
         self.session = self.db.connect_and_generate_db()
 
 
     def store_data_in_db(self):
-        while True:
-            time.sleep(5)
-            current_file_name_list = []
-            current_param_dict = MultiDict()
-            current_file_name_list.extend(glob.glob(self.glob_lookup_arg))
-            for current_file_name in current_file_name_list:
-                print current_file_name_list
-                current_param_dict = self.xml.read_xml(current_file_name)
-                #print current_param_dict
-                if self.db.update_client_info(self.session, current_param_dict['client']):
-                    self.log.log_msg("True from update")
-                for each_parameter_type in self.parameter_types:
-                    print each_parameter_type
-                    self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
-                #self.db.insert_db(self.session, 'clients', current_param_dict['client'])
-                self.db.commit_transaction(self.session)
-                os.remove(current_file_name)
+        try:
+            while True:
+                time.sleep(5)
+                current_file_name_list = []
+                current_param_dict = MultiDict()
+                current_file_name_list.extend(glob.glob(self.glob_lookup_arg))
+                for current_file_name in current_file_name_list:
+                    print current_file_name_list
+                    current_param_dict = self.xml.read_xml(current_file_name)
+                    if self.db.update_client_info(self.session, current_param_dict['client']):
+                        self.log.log_msg("True from update")
+                    for each_parameter_type in self.parameter_types:
+                        print each_parameter_type
+                        self.db.insert_db(self.session, each_parameter_type, current_param_dict['client'], current_param_dict[each_parameter_type])
+                    #self.db.insert_db(self.session, 'clients', current_param_dict['client'])
+                    self.db.commit_transaction(self.session)
+                    ack_file_handle = open(os.path.dirname(current_file_name) + '/ack')
+                    ack_file_handle.write(current_file_name.split('/')[-1])
+                    ack_file_handle.close()
+                    os.remove(current_file_name)
+                    return True
+        except Exception, e:
+            self.log.log_msg("Exception in store_data_in_db(): %s" % str(e))
+            return False
 
     def run(self):
         try:
@@ -70,6 +79,7 @@ class ADS:
             self.rpc.run_rpc_service()
         except Exception, e:
             self.log.log_msg("Exception in run_rpc(): %s" % str(e))
+            return False
 
     def run_anomaly_detection(self):
         try:
@@ -80,16 +90,20 @@ class ADS:
                 for vm_id in vm_id_list:
                     for each_parameter_type in self.parameter_types:
                         algorithm_input_list = self.get_data_for_algorithm(vm_id[0], each_parameter_type)
-                        print algorithm_input_list
+                        if algorithm_input_list:
+                            print algorithm_input_list
                 time.sleep(5)
+            return True
         except Exception, e:
             self.log.log_msg("Exception in run_anomaly_detection(): %s" % str(e))
+            return False
 
     def get_data_for_algorithm(self, vm_id, table_name):
         try:
             return self.db.fetch_db(self.session, vm_id, table_name)
         except Exception, e:
             self.log.log_msg("Exception in get_data_for_algorithm(): %s" % str(e))
+            return False
 
 
 if __name__ == "__main__":
