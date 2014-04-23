@@ -20,7 +20,7 @@ class ADSClientConfig:
             "ads_log_path"                          :   "/home/slohia/ads/log",
             "ads_log_file"                          :   "ads.log",
             "primary_server_ip"                     :   "143.215.204.205",
-            "secondary_server_ip"                   :   "0.0.0.0",
+            "secondary_server_ip"                   :   "143.215.206.121",
             "server_port"                           :   "8006",
             "primary_server_username"               :   "slohia",
             "primary_server_password"               :   "1",
@@ -30,7 +30,7 @@ class ADSClientConfig:
 
         self.usr_env = {
             "LOG_LEVEL"                 : "debug", #info/debug/client
-            "server_timeout_period"     : 4, #number of missing acknowledgement
+            "server_timeout_period"     : 10, #number of missing acknowledgement
             "monitoring_period"         : 5 #in seconds
         }
 
