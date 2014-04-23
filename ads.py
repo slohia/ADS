@@ -54,14 +54,14 @@ class ADS:
     def run(self):
         try:
             storage_process = Process(target=self.store_data_in_db)
-            anomaly_detection_process = Process(target=self.run_anomaly_detection)
+            # anomaly_detection_process = Process(target=self.run_anomaly_detection)
             rpc_process = Process(target=self.run_rpc)
             rpc_process.start()
             storage_process.start()
-            anomaly_detection_process.start()
+            # anomaly_detection_process.start()
             rpc_process.join()
             storage_process.join()
-            anomaly_detection_process.join()
+            # anomaly_detection_process.join()
         except Exception, e:
             self.log.log_msg("Exception in run(): %s" % str(e))
 

@@ -19,7 +19,7 @@ class ADSClientConfig:
         self.env = {
             "ads_log_path"              : "/home/slohia/ads/log",
             "ads_log_file"              : "ads.log",
-            "primary_server_ip"         : "10.0.0.61",
+            "primary_server_ip"         : "143.215.204.205",
             "secondary_server_ip"       : "0.0.0.0",
             "server_port"               : "8006",
             "server_username"           : "slohia",

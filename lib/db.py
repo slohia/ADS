@@ -9,7 +9,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker
 import datetime
 Base = declarative_base()
@@ -87,18 +87,20 @@ class Disk(Base):
     buffer_read_bytes_rate = Column(Integer)
     write_bytes_rate = Column(Integer)
     total_files = Column(Integer)
+    utilization = Column(Integer)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, vm_id, cache_read_bytes_rate, buffer_read_bytes_rate, write_bytes_rate, total_files, timestamp):
+    def __init__(self, vm_id, cache_read_bytes_rate, buffer_read_bytes_rate, write_bytes_rate, total_files, utilization, timestamp):
         self.vm_id = vm_id
         self.cache_read_bytes_rate = cache_read_bytes_rate
         self.buffer_read_bytes_rate = buffer_read_bytes_rate
         self.write_bytes_rate = write_bytes_rate
         self.total_files = total_files
+        self.utilization = utilization
         self.timestamp = timestamp
 
     def __repr__(self):
-        return "<Disk(%s, %s, %s, %s, %s, %s)>" % (self.vm_id, str(self.cache_read_bytes_rate), str(self.buffer_read_bytes_rate), str(self.write_bytes_rate), str(self.total_files), str(self.timestamp))
+        return "<Disk(%s, %s, %s, %s, %s, %s, %s)>" % (self.vm_id, str(self.cache_read_bytes_rate), str(self.buffer_read_bytes_rate), str(self.write_bytes_rate), str(self.total_files), str(self.utilization), str(self.timestamp))
 
 
 class Clients(Base):
@@ -180,7 +182,7 @@ class DB:
             if len(param_dict) == 5:
                 if table_name == 'disk':
                     self.log.log_msg("The insert request is for the database table 'disk'")
-                    new_record = Disk(vm_id=client_dict['vm_id'], cache_read_bytes_rate=param_dict['cache_read_bytes_rate'], buffer_read_bytes_rate=param_dict['buffer_read_bytes_rate'], write_bytes_rate=param_dict['write_bytes_rate'], total_files=param_dict['total_files'], timestamp=datetime.datetime.utcnow())
+                    new_record = Disk(vm_id=client_dict['vm_id'], cache_read_bytes_rate=param_dict['cache_read_bytes_rate'], buffer_read_bytes_rate=param_dict['buffer_read_bytes_rate'], write_bytes_rate=param_dict['write_bytes_rate'], total_files=param_dict['total_files'], utilization=param_dict['utilization'], timestamp=datetime.datetime.utcnow())
             if len(param_dict) == 3:
                 if table_name == 'cpu':
                     self.log.log_msg("The insert request is for the database table 'cpu'")
@@ -236,6 +238,30 @@ class DB:
         except Exception, e:
             self.log.log_msg("Exception in fetch_db(): %s" % str(e))
 
+    def fetch_db_for_learning(self, session, vm_id_arg, table_name_arg):
+        num_rows = 100
+        #fetched_result = False
+        try:
+            self.log.log_msg("Request to fetch data from table %s for vm %s" % (table_name_arg, vm_id_arg))
+            if table_name_arg == 'network':
+                fetched_result = session.query(Network).filter(Network.vm_id == vm_id_arg)
+            elif table_name_arg == 'cpu':
+                fetched_result = session.query(CPU).filter(CPU.vm_id == vm_id_arg)
+            elif table_name_arg == 'memory':
+                fetched_result = session.query(Memory).filter(Memory.vm_id == vm_id_arg)
+            elif table_name_arg == 'disk':
+                fetched_result = session.query(Disk).filter(Disk.vm_id == vm_id_arg)
+            else:
+                self.log.log_msg("Wrong table name passed.")
+                return False
+            if fetched_result:
+                if len(fetched_result.all()) >= num_rows:
+                    return fetched_result.all()
+                else:
+                    return False
+        except Exception, e:
+            self.log.log_msg("Exception in fetch_db_for_learning(): %s" % str(e))
+
     def fetch_vm_ids_from_db(self, session):
         try:
             fetched_result = session.query(Clients.vm_id)
@@ -254,6 +280,19 @@ class DB:
                 return False
         except Exception, e:
             self.log.log_msg("Exception in fetch_vm_ids_from_db() %s" % str(e))
+
+    def fetch_existing_client_uid(self, session, client_hostname, client_ip):
+        fetched_result = None
+        try:
+            fetched_result = session.query(Clients).filter(Clients.vm_ip == client_ip).filter(Clients.vm_name == client_hostname).first()
+            if fetched_result:
+                return fetched_result.vm_id
+            else:
+                return False
+        except Exception, e:
+            self.log.log_msg("Exception in fetch_existing_client_uid() %s" % str(e))
+            return False
+
 
     def disconnect_db(self, session):
         try:

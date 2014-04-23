@@ -9,7 +9,7 @@ import time
 
 class SOM(Process):
     # client_id, 'cpu', 32, 32, 3, 0.05, 100
-    def __init__(self, client_id, name, height=10, width=10, fv_size=10, learning_rate=0.005, seed=255):
+    def __init__(self, ads, client_id, name, height=10, width=10, fv_size=10, learning_rate=0.005, seed=255):
         Process.__init__(self)
         self.client_id = client_id
         self.name = name
@@ -20,16 +20,108 @@ class SOM(Process):
         self.learning_rate = learning_rate
         self.max_train_values = []
         self.threshold = 0
+        self.db = ads.db
+        self.log = ads.log
         self.nodes = scipy.array([[[random()*seed for i in range(fv_size)] for x in range(width)] for y in range(height)])
 
     def run(self):
-        time.sleep(5)
-        print "hello"
+        train_data = False
+        num_train_rows = 100
+        while not train_data:
+            session = self.db.connect_db()
+            train_data = self.db.fetch_db_for_learning(session, self.client_id, self.name)
+            self.db.disconnect_db(session)
+            time.sleep(5*60)
+
+        # creating train vector
+        train_vector = []
+        for i in range(num_train_rows):
+            train_vector.append([])
+            if self.name == 'cpu':
+                train_vector[i].append(train_data[i].processes)
+                train_vector[i].append(train_data[i].system_time)
+                train_vector[i].append(train_data[i].user_time)
+            elif self.name == 'disk':
+                train_vector[i].append(train_data[i].cache_read_bytes_rate)
+                train_vector[i].append(train_data[i].buffer_read_bytes_rate)
+                train_vector[i].append(train_data[i].write_bytes_rate)
+                train_vector[i].append(train_data[i].total_files)
+                train_vector[i].append(train_data[i].utilization)
+            elif self.name == 'memory':
+                train_vector[i].append(train_data[i].utilization)
+                train_vector[i].append(train_data[i].page_faults)
+            elif self.name == 'network':
+                train_vector[i].append(train_data[i].latency)
+                train_vector[i].append(train_data[i].throughput)
+                train_vector[i].append(train_data[i].packet_loss)
+                train_vector[i].append(train_data[i].open_ports)
+            else:
+                pass
+
+        # finding max train values from train vector for normalizing
+        self.max_train_values = [0] * self.fv_size
+        for i in range(num_train_rows):
+            for j in range(self.fv_size):
+                    if train_vector[i][j] > self.max_train_values[j]:
+                        self.max_train_values[j] = train_vector[i][j]
+
+        print train_vector
+        # normalizing
+        for i in range(num_train_rows):
+            for j in range(self.fv_size):
+                train_vector[i][j] = int(train_vector[i][j] * 100.0 / self.max_train_values[j])
+
+        self.train(train_vector, 100)
+
+        while True:
+            time.sleep(5*60)
+            session = self.db.connect_db()
+            test_data = self.db.fetch_db(session, self.client_id, self.name)
+            self.db.disconnect_db(session)
+
+            count = 0
+            for i in range(len(test_data)):
+                feature_vector = []
+                if self.name == 'cpu':
+                    feature_vector.append(test_data[i].processes)
+                    feature_vector.append(test_data[i].system_time)
+                    feature_vector.append(test_data[i].user_time)
+                elif self.name == 'disk':
+                    feature_vector.append(test_data[i].cache_read_bytes_rate)
+                    feature_vector.append(test_data[i].buffer_read_bytes_rate)
+                    feature_vector.append(test_data[i].write_bytes_rate)
+                    feature_vector.append(test_data[i].total_files)
+                    feature_vector.append(test_data[i].utilization)
+                elif self.name == 'memory':
+                    feature_vector.append(test_data[i].utilization)
+                    feature_vector.append(test_data[i].page_faults)
+                elif self.name == 'network':
+                    feature_vector.append(test_data[i].latency)
+                    feature_vector.append(test_data[i].throughput)
+                    feature_vector.append(test_data[i].packet_loss)
+                    feature_vector.append(test_data[i].open_ports)
+                else:
+                    pass
+                result = self.predict(feature_vector)
+                if result == 'Anomaly':
+                    count += 1
+            if count >= len(test_data)/3:
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("Anomaly encountered on " + str(self.client_id) + " for the " + self.name + " parameter...")
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("=============================================================")
+            else:
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("No Anomaly found on " + str(self.client_id) + " for the " + self.name + " parameter...")
+                self.log.log_msg("=============================================================")
+                self.log.log_msg("=============================================================")
 
     # train_vector: [ fv0, fv1, fv2, ...] -> [ [...], [...], [...], ...]
     # train vector may be a list, will be converted to a list of scipy arrays
     def train(self, train_vector, iterations=1000):
-        self.save_image(0)
+        #self.save_image(0)
         for t in range(len(train_vector)):
             train_vector[t] = scipy.array(train_vector[t])
         time_constant = iterations/log(self.radius)
@@ -64,7 +156,7 @@ class SOM(Process):
 
                     delta_nodes[loc[0], loc[1]] += inf_lrd*(train_vector[j] - self.nodes[loc[0], loc[1]])
             self.nodes += delta_nodes
-            self.save_image(i)
+            #self.save_image(i)
         #self.threshold /= len(train_vector)
         sys.stdout.write("\n")
 
@@ -84,11 +176,11 @@ class SOM(Process):
         distance += cityblock(self.nodes[best[0], best[1]], self.nodes[best[0], min_x])
         distance += cityblock(self.nodes[best[0], best[1]], self.nodes[best[0], max_x])
         if distance > self.threshold + 0.1:
-            self.save_predict_image(best, "predict", "anomaly")
-            print self.threshold, distance, best, "Anomaly"
+            #self.save_predict_image(best, "predict", "anomaly")
+            return "Anomaly"
         else:
-            self.save_predict_image(best, "predict", "normal")
-            print self.threshold, distance, best, "Normal"
+            #self.save_predict_image(best, "predict", "normal")
+            return "Normal"
 
     # Returns a list of points which live within 'dist' of 'pt'
     # Uses the Chessboard distance
@@ -121,49 +213,49 @@ class SOM(Process):
     def fv_distance(self, fv_1, fv_2):
         return (sum((fv_1 - fv_2)**2))**0.5
 
-    def save_image(self, image_number):
-        try:
-            from PIL import Image
-            print " Saving Image: " + self.name + "_" + str(image_number) + ".png..."
-            img = Image.new("RGB", (width, height))
-            for r in range(height):
-                for c in range(width):
-                    if self.fv_size != 3:
-                        sum = 0
-                        for i in range(self.fv_size):
-                            sum += self.nodes[r, c, i]
-                            #print sum
-                        val = int(sum/self.fv_size)
-                        img.putpixel((r, c), (val, val, val))
-                    else:
-                        img.putpixel((r, c), (int(self.nodes[r, c, 0]), int(self.nodes[r, c, 1]), int(self.nodes[r, c, 2])))
-            img = img.resize((width*10, height*10), Image.NEAREST)
-            img.save(self.name + "_" + str(image_number) + ".png")
-        except Exception, e:
-            print str(e)
-
-    def save_predict_image(self, best, iteration, image_number):
-        try:
-            from PIL import Image
-            #print " Saving Image: " + self.name + "_predict_" + str(iteration) + "_" + str(image_number) + ".png..."
-            img = Image.new("RGB", (width, height))
-            for r in range(height):
-                for c in range(width):
-                    if (c, r) == best:
-                        img.putpixel(best, (0, 255, 0))
-                    elif self.fv_size != 3:
-                        sum = 0
-                        for i in range(self.fv_size):
-                            sum += self.nodes[r, c, i]
-                            #print sum
-                        val = int(sum/self.fv_size)
-                        img.putpixel((c, r), (val, val, val))
-                    else:
-                        img.putpixel((c, r), (int(self.nodes[r, c, 0]), int(self.nodes[r, c, 1]), int(self.nodes[r, c, 2])))
-            img = img.resize((width*10, height*10), Image.NEAREST)
-            img.save("CPU/" + self.name + "_predict_" + str(iteration) + "_" + str(image_number) + ".png")
-        except Exception, e:
-            print str(e)
+    # def save_image(self, image_number):
+    #     try:
+    #         from PIL import Image
+    #         print " Saving Image: " + self.name + "_" + str(image_number) + ".png..."
+    #         img = Image.new("RGB", (width, height))
+    #         for r in range(height):
+    #             for c in range(width):
+    #                 if self.fv_size != 3:
+    #                     sum = 0
+    #                     for i in range(self.fv_size):
+    #                         sum += self.nodes[r, c, i]
+    #                         #print sum
+    #                     val = int(sum/self.fv_size)
+    #                     img.putpixel((r, c), (val, val, val))
+    #                 else:
+    #                     img.putpixel((r, c), (int(self.nodes[r, c, 0]), int(self.nodes[r, c, 1]), int(self.nodes[r, c, 2])))
+    #         img = img.resize((width*10, height*10), Image.NEAREST)
+    #         img.save(self.name + "_" + str(image_number) + ".png")
+    #     except Exception, e:
+    #         print str(e)
+    #
+    # def save_predict_image(self, best, iteration, image_number):
+    #     try:
+    #         from PIL import Image
+    #         #print " Saving Image: " + self.name + "_predict_" + str(iteration) + "_" + str(image_number) + ".png..."
+    #         img = Image.new("RGB", (width, height))
+    #         for r in range(height):
+    #             for c in range(width):
+    #                 if (c, r) == best:
+    #                     img.putpixel(best, (0, 255, 0))
+    #                 elif self.fv_size != 3:
+    #                     sum = 0
+    #                     for i in range(self.fv_size):
+    #                         sum += self.nodes[r, c, i]
+    #                         #print sum
+    #                     val = int(sum/self.fv_size)
+    #                     img.putpixel((c, r), (val, val, val))
+    #                 else:
+    #                     img.putpixel((c, r), (int(self.nodes[r, c, 0]), int(self.nodes[r, c, 1]), int(self.nodes[r, c, 2])))
+    #         img = img.resize((width*10, height*10), Image.NEAREST)
+    #         img.save("CPU/" + self.name + "_predict_" + str(iteration) + "_" + str(image_number) + ".png")
+    #     except Exception, e:
+    #         print str(e)
 
 #
 # if __name__ == "__main__":

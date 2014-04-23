@@ -37,6 +37,11 @@ class ClientFunctions:
         self.db.disconnect_db(session)
 
     def get_uid(self, client_hostname, client_ip_address):
+        print "IPADDRESS RECEIVED: %s" % str(client_ip_address)
+        uid = self.check_existing_client(client_hostname, client_ip_address)
+        if uid:
+            self.log.log_msg("Client already exists in database. Returning uid: %s" % str(uid))
+            return str(uid)
         client_dict = MultiDict()
         client_dict['vm_ip'] = client_ip_address
         client_dict['vm_name'] = client_hostname
@@ -50,6 +55,11 @@ class ClientFunctions:
         self.store_new_client_info(client_dict)
         return str(client_dict['vm_id'])
 
+    def check_existing_client(self, client_hostname, client_ip_address):
+        session = self.db.connect_db()
+        client_uid = self.db.fetch_existing_client_uid(session, client_hostname, client_ip_address)
+        return client_uid
+
     def get_server_repository(self, client_id):
         self.log.log_msg("Request to create server repository...")
         xml_repository = self.config.xml['ads_xml_repository']
@@ -58,17 +68,15 @@ class ClientFunctions:
         if not os.path.exists(new_repo_for_client):
             os.makedirs(new_repo_for_client)
         self.log.log_msg("Created server repository SUCCESSFULLY! " + new_repo_for_client)
-
         self.log.log_msg("Creating learning process for client")
-        cpu_process = SOM(client_id, 'cpu', 32, 32, 3, 0.05, 100)
+        cpu_process = SOM(self, client_id, 'cpu', 32, 32, 3, 0.05, 100)
         cpu_process.start()
-        memory_process = SOM(client_id, 'memory', 32, 32, 2, 0.05, 100)
+        memory_process = SOM(self, client_id, 'memory', 32, 32, 2, 0.05, 100)
         memory_process.start()
-        network_process = SOM(client_id, 'network', 32, 32, 4, 0.05, 100)
+        network_process = SOM(self, client_id, 'network', 32, 32, 4, 0.05, 100)
         network_process.start()
-        disk_process = SOM(client_id, 'disk', 32, 32, 5, 0.05, 100)
+        disk_process = SOM(self, client_id, 'disk', 32, 32, 5, 0.05, 100)
         disk_process.start()
-
         return new_repo_for_client
 
 
@@ -80,8 +88,8 @@ class RPC:
         self.config = ads.config
 
     def run_rpc_service(self):
-        self.log.log_msg("Starting RPC service @ 10.0.0.61:8006")
-        server = SimpleXMLRPCServer.SimpleXMLRPCServer(("10.0.0.61", 8006))
+        self.log.log_msg("Starting RPC service @ 143.215.204.205:8006")
+        server = SimpleXMLRPCServer.SimpleXMLRPCServer(("143.215.204.205", 8006))
         server.register_instance(ClientFunctions(self))
         server.serve_forever()
 
