@@ -108,12 +108,14 @@ class ADSClient:
             return ack_stat
         except Exception,e:
             self.log.log_msg("Exception in get_acks_from_server :%s" % str(e))
+            return False
 
     def is_primary_server_alive(self):
         try:
             ack_stat = self.get_ack_stat()
             if ack_stat:
                 current_time = calendar.timegm(time.gmtime())
+                print current_time, ack_stat.st_mtime, (self.monitoring_period*self.server_timeout_period)
                 if current_time - ack_stat.st_mtime > self.monitoring_period * self.server_timeout_period:
                     self.log.log_msg("Primary server is not alive.")
                     self.is_primary_alive = False
