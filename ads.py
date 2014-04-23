@@ -31,7 +31,7 @@ class ADS:
         self.parameter_types = self.config.usr_env['parameter_types']
         if not os.path.isdir(self.xml_repository):
             os.makedirs(self.xml_repository)
-        self.session = self.db.connect_and_generate_db()
+        self.session = self.db.connect_db()#_and_generate_db()
 
 
     def store_data_in_db(self):
